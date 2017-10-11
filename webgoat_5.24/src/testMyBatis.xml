@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="model.Customer">
+	<sql id="dynamicWhere">
+		<where>
+			<if test="@O@isNotEmpty(id)">  
+         AND ID = #{id}  
+     </if>
+			<if test="@O@isNotEmpty(userName)">  
+         AND userName = #{userName}  
+     </if>
+			<if test="@O@isNotEmpty(password)">
+        AND password = ${password}  
+     </if>
+		</where>
+	</sql>
+		<!-- 列表查询开始 -->
+	<select id="query" resultMap="resultMap" >
+		select
+		<include refid="column_list" />
+		,c.CATEGORY_TITLE,c.CATEGORY_ID
+		,cl.COLUMN_PATH,cl.COLUMN_CONTENTMODELID,cl.COLUMN_TYPE,cl.COLUMN_CATEGORYID 
+		FROM cms_article a LEFT JOIN basic b  ON a.ARTICLE_BASICID = b.BASIC_ID 
+		LEFT JOIN cms_column cl ON b.BASIC_CATEGORYID = cl.COLUMN_CATEGORYID 
+		LEFT JOIN category c ON c.CATEGORY_ID = cl.COLUMN_CATEGORYID
+		where a.ARTICLE_WEBID = #{webId}
+		<if test="article != null ">
+			<if test="article.basicTitle != null">
+				and b.BASIC_TITLE like
+				CONCAT('%',#{article.basicTitle},'%')
+			</if>
+		</if>
+		<if test="basicCategoryIds != null">
+			and b.BASIC_CATEGORYID in
+			<foreach collection="basicCategoryIds" index="index" item="categoryId"
+				open="(" separator="," close=")">
+				#{categoryId}
+			</foreach>
+		</if>
+		<if test="flag != null">and a.ARTICLE_TYPE like CONCAT('%',#{flag},'%')</if>
+		<if test="noFlag != null">and a.ARTICLE_TYPE not like CONCAT('%',#{noFlag},'%')</if>
+		<if test="orderBy != null">
+			order by
+			<choose>
+				<when test='orderBy=="sort"'>basic_sort</when>
+				<when test='orderBy=="date"'>basic_datetime</when>
+				<when test='orderBy=="hit"'>basic_hit</when>
+				<when test='orderBy=="updatedate"'>basic_updatedate</when>
+				<when test='orderBy=="id"'>basic_id</when>
+				<otherwise>
+					${orderBy}
+				</otherwise>
+			</choose>
+		</if>
+
+		<if test="orderBy==null">
+			order by b.basic_id
+		</if>
+		<if test="order == true">desc</if>
+		<if test="order == false">asc</if>
+	</select>
+</mapper>
